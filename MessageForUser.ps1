@@ -2,7 +2,7 @@ Function setLogin ($Path) {
     $Users = Get-ADUser -Filter *
     $ExcelObj = New-Object -comobject Excel.Application
     $ExcelWorkBook = $ExcelObj.Workbooks.Open($Path)
-    $ExcelWorkSheet = $ExcelWorkBook.Sheets.Item("Лист1")
+    $ExcelWorkSheet = $ExcelWorkBook.Sheets.Item("Р›РёСЃС‚1")
     $MaxRows = ($ExcelWorkSheet.UsedRange.Rows).count
 
     for ($count = 2; $count -ile $MaxRows; $count++) {
@@ -24,15 +24,12 @@ Function setLogin ($Path) {
 }
 
 
-Function CreateMsgForUsers($Path) {
-    $ExcelObj = New-Object -comobject Excel.Application # Создание объекта Excel
-    $ExcelWorkBook = $ExcelObj.Workbooks.Open($Path) # Получение книги
+Function CreateMsgForUsers($ExcelWorkSheet) {
     
-    $ExcelWorkSheet = $ExcelWorkBook.Sheets.Item("Лист1") # Выбор листа
     
-    $MaxRows = ($ExcelWorkSheet.UsedRange.Rows).count; # Получение количества строк листа Excel
+    $MaxRows = ($ExcelWorkSheet.UsedRange.Rows).count; 
     
-    $Computers = Get-ADComputer -Filter * -SearchBase "OU=Компьютеры,OU=ТАИФ КОС,OU=SIBUR Holding,DC=sibur,DC=local" -Properties *
+    $Computers = Get-ADComputer -Filter * -SearchBase "OU=РљРѕРјРїСЊСЋС‚РµСЂС‹,OU=РўРђРР¤ РљРћРЎ,OU=SIBUR Holding,DC=sibur,DC=local" -Properties *
     
     $LoggedUsersFromComputers = @()
     $StatusMessage = @()
@@ -67,16 +64,16 @@ Function CreateMsgForUsers($Path) {
         
         $currentDate = Get-Date
     
-        if ($ticketStatus -eq 'да') {
+        if ($ticketStatus -eq 'РґР°') {
             continue
         }
 
-        if ($isGivedInventory -eq "да") {
+        if ($isGivedInventory -eq "РґР°") {
             continue
         }
 
         if ($user -eq '') {
-            $StatusMessage += @{Login=$NULL;UserName=$fio;StatusMessage="Найдено несколько пользователей по ФИО. Не отправлено";MultiLogin=$True}
+            $StatusMessage += @{Login=$NULL;UserName=$fio;StatusMessage="РќР°Р№РґРµРЅРѕ РЅРµСЃРєРѕР»СЊРєРѕ СЃРѕРІРїРѕРґРµРЅРёР№ РїРѕ РґР°РЅРЅРѕРјСѓ Р¤РРћ";MultiLogin=$True}
             continue
         }
 
@@ -86,8 +83,25 @@ Function CreateMsgForUsers($Path) {
         $currentUser = $currentUsers.UserName
 
         if ($currentUsers) {
-            $Sender = "Группа поддержки рабочих мест Сибур Коннект"
-            $Message = "Уважаемый(ая) $fio, на вас числится оборудование c инвентарными номерами $inventoryNumber, в связи с увольнением просим вас подать соответствующее обращение и сдать технику до $endDate"
+            $Sender = "РџРѕРґРґРµСЂР¶РєР° СЂР°Р±РѕС‡РёС… РјРµСЃС‚"
+
+            # ===========================================================================================================================================================================================
+
+            # $inventoryNumber
+            # $inventoryDescription
+            # $fio
+            # $endDate
+
+
+
+            $Message = "РЈРІР°Р¶Р°РµРјС‹Р№(Р°СЏ) $fio, Р·Р° РІР°РјРё С‡РёСЃР»РёС‚СЃСЏ РРў РѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ РёРЅРІ.в„– $inventoryNumber, РІ СЃРІСЏР·Рё СЃ РІР°С€РµРј СѓРІРѕР»СЊРЅРµРЅРёРµРј РЅСѓР¶РЅРѕ СЃРѕР·РґР°С‚СЊ Р·Р°СЏРІРєСѓ В«Р·Р°Р±СЂР°С‚СЊ РџРљВ» РІРѕ Р’РљРЈРЎРµ Рё СЃРґР°С‚СЊ РµРіРѕ РІ Рє.1030Р‘ РёР»Рё 42"
+
+            #============================================================================================================================================================================================
+
+
+
+
+
             $RemoteComputer = $currentUsers.ComputerName
             
             # Invoke-Command -ComputerName $RemoteComputer -ScriptBlock ${function:New-ToastNotification} -ArgumentList $Sender,$Message
@@ -98,124 +112,22 @@ Function CreateMsgForUsers($Path) {
                     msg * $Message
                     
                 } -ArgumentList $Message -ErrorAction Stop 
-                $StatusMessage += @{Login=$currentUsers.UserName;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="Отправлено"}
+                $StatusMessage += @{Login=$currentUsers.UserName;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="РћС‚РїСЂР°РІР»РµРЅРѕ"}
                 
             } catch {
-                $StatusMessage += @{Login=$currentUsers.UserName;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="Не отправлено. Компьютер выключен."}
+                $StatusMessage += @{Login=$currentUsers.UserName;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="РќРµ РѕС‚РїСЂР°РІР»РµРЅРѕ. РєРѕРјРїСЊСЋС‚РµСЂ РІС‹РєР»СЋС‡РµРЅ."}
                 
             }
 
         } else {
             
             
-            $StatusMessage += @{Login=$NULL;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="Авторизованного пользователя не найдено. Сообщение не отправлено"}
+            $StatusMessage += @{Login=$NULL;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="РќРµ РЅР°Р№РґРµРЅ Р°РІС‚РѕСЂРёР·РѕРІР°РЅРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ. РЎРѕРѕР±С‰РµРЅРёРµ РЅРµ РѕС‚РїСЂР°РІР»РµРЅРѕ"}
             
         }
     }
     return $StatusMessage
 }
-
-
-
-
-
-
-
-
-
-
-
-
-# Function CreateMsgForUsers($Excel, $ComputersFromAD) {
-#     $MaxRows = ($Excel.UsedRange.Rows).count;
-
-#     $LoggedUsersFromComputers = @()
-#     $StatusMessage = @()
-    
-#     foreach ($computer in $ComputersFromAD) {
-    
-#       if ($computer.Description -eq $NULL) {
-#         continue
-#       }
-#       if ($computer.Description.Split(" ")[0] -eq "Logged") {
-#         $ComputerName = $computer.Name
-#         $UserName = $computer.Description.Split(" ")[2]
-#         $LoggedDate = $computer.Description.Split(" ")[6]
-#         $LoggedUsersFromComputers += @{ComputerName=$ComputerName;UserName=$UserName;LoggedDate=$LoggedDate}
-#       } else {
-#         $ComputerName = $computer.Name
-#         $UserName = $computer.Description.Split(" ")[3]
-#         $LoggedDate = $computer.Description.Split(" ")[7]
-#         $LoggedUsersFromComputers += @{ComputerName=$ComputerName;UserName=$UserName;LoggedDate=$LoggedDate}
-#       }
-#     }
-    
-#     for ($count = 2; $count -ile $MaxRows; $count++) {
-#         $user = $Excel.Rows.Item($count).Columns.Item(2).Text
-#         $fio = $Excel.Rows.Item($count).Columns.Item(1).Text
-#         $inventoryNumber = $Excel.Rows.Item($count).Columns.Item(3).Text
-#         $inventoryDescription = $Excel.Rows.Item($count).Columns.Item(4).Text
-#         $ticketStatus = $Excel.Rows.Item($count).Columns.Item(5).Text
-#         $endDate = $Excel.Rows.Item($count).Columns.Item(6).Text
-#         $isGivedInventory = $Excel.Rows.Item($count).Columns.Item(7).Text
-        
-#         $currentDate = Get-Date
-    
-#         if ($ticketStatus -eq 'да') {
-#             continue
-#         }
-
-#         if ($isGivedInventory -eq "да") {
-#             continue
-#         }
-
-#         if ($user -eq '') {
-#             $StatusMessage += @{Login=$NULL;UserName=$fio;StatusMessage="Найдено несколько пользователей по ФИО. Не отправлено";MultiLogin=$True}
-#             continue
-#         }
-
-    
-#         $currentDateUsers = $LoggedUsersFromComputers | where {$_.LoggedDate -eq $currentDate.ToString("dd.MM.yyyy")}
-#         $currentUsers = $currentDateUsers | where {$_.UserName -eq $user}
-#         $currentUser = $currentUsers.UserName
-
-#         if ($currentUsers) {
-#             $Sender = "Группа поддержки рабочих мест Сибур Коннект"
-#             $Message = "Уважаемый(ая) $fio, на вас числится оборудование c инвентарными номерами $inventoryNumber, в связи с увольнением просим вас подать соответствующее обращение и сдать технику до $endDate"
-#             $RemoteComputer = $currentUsers.ComputerName
-            
-#             # Invoke-Command -ComputerName $RemoteComputer -ScriptBlock ${function:New-ToastNotification} -ArgumentList $Sender,$Message
-        
-#             try {
-#                 Invoke-Command -ComputerName $RemoteComputer -ScriptBlock {
-#                     Param($Message)
-#                     msg * $Message
-                    
-#                 } -ArgumentList $Message -ErrorAction Stop 
-#                 $StatusMessage += @{Login=$currentUsers.UserName;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="Отправлено"}
-                
-#             } catch {
-#                 $StatusMessage += @{Login=$currentUsers.UserName;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="Не отправлено. Компьютер выключен."}
-                
-#             }
-
-#         } else {
-            
-            
-#             $StatusMessage += @{Login=$NULL;UserName=$fio;$ComputerName=$currentUsers.ComputerName;StatusMessage="Авторизованного пользователя не найдено. Сообщение не отправлено"}
-            
-#         }
-#     }
-#     return $StatusMessage
-# }
-
-
-
-
-
-
-
-
 
 
 
@@ -233,7 +145,7 @@ $window_form.AutoSize = $true
 
 $form_status_label1 = New-Object System.Windows.Forms.Label
 $form_status_label1 = New-Object System.Windows.Forms.Label
-$form_status_label1.Text = "Интервал (секунды):"
+$form_status_label1.Text = "РРЅС‚РµСЂРІР°Р» (РІ СЃРµРєСѓРЅРґР°С…):"
 $form_status_label1.Location = New-Object System.Drawing.Point(10,10)
 $form_status_label1.AutoSize = $true
 $form_status_label1.Font = New-Object System.Drawing.Font("Arial",14,[System.Drawing.FontStyle]::Regular)
@@ -247,7 +159,7 @@ $window_form.Controls.Add($textBox)
 
 $form_status_label2 = New-Object System.Windows.Forms.Label
 $form_status_label2 = New-Object System.Windows.Forms.Label
-$form_status_label2.Text = "Количество повторов:"
+$form_status_label2.Text = "РљРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРІС‚РѕСЂРѕРІ:"
 $form_status_label2.Location = New-Object System.Drawing.Point(10,80)
 $form_status_label2.AutoSize = $true
 $form_status_label2.Font = New-Object System.Drawing.Font("Arial",14,[System.Drawing.FontStyle]::Regular)
@@ -260,13 +172,13 @@ $window_form.Controls.Add($textBox1)
 
 $SendMessage = New-Object System.Windows.Forms.Button
 $SendMessage.BackColor = "#3ecede"
-$SendMessage.text = "Отправить"
+$SendMessage.text = "РћС‚РїСЂР°РІРёС‚СЊ"
 $SendMessage.Location = New-Object System.Drawing.Point(10,140)
 $SendMessage.Size = New-Object System.Drawing.Size(180,30)
 $SendMessage.AutoSize = $True
 $SendMessage.Add_Click({
     
-    
+
     $interation = 0
     $interval = 0;
 
@@ -275,21 +187,26 @@ $SendMessage.Add_Click({
         $interval = [int]$textBox.text
     }
     catch {
-        msg * "Не корректный тип данных интервала или количества повторов, пожалуйста введите число"
+        msg * "РќРµ РІРµСЂРЅС‹Р№ С‚РёРї РІРІРµРґРµРЅРЅС‹С… РґР°РЅРЅС‹С…. РџРѕРІС‚РѕСЂРёС‚Рµ РїРѕРїС‹С‚РєСѓ"
     }
 
 
     $currentPath = ''
     if ($textBox2.text) {
         $currentPath = $textBox2.text
-        setLogin -Path $currentPath
+
+        $ExcelObj = New-Object -comobject Excel.Application
+        $ExcelWorkBook = $ExcelObj.Workbooks.Open($currentPath) 
+        $ExcelWorkSheet = $ExcelWorkBook.Sheets.Item("Р›РёСЃС‚1") 
         
-        $StatusLabel1.Text = "Процесс отправки сообщения..."
+        $StatusLabel1.Text = "Р’С‹РїРѕР»РЅСЏРµС‚СЃСЏ РїСЂРѕС†РµСЃСЃ РѕС‚РїСЂР°РІРєРё..."
         
-        
+        $StatusList.Items.Clear()
+        $form_status_label4.text = ''
+
         for ($count = 1; $count -ile $interation; $count++){
             
-            $status = CreateMsgForUsers -Path $currentPath
+            $status = CreateMsgForUsers -ExcelWorkSheet $ExcelWorkSheet
             
             if ($count -eq 1) {
                 foreach ($item in $status) {
@@ -302,11 +219,11 @@ $SendMessage.Add_Click({
                     } elseif ($item.MultiLogin) {
                         $userName = $item.UserName
                         $RequestMessage = $item.StatusMessage
-                        $StatusList.Items.Add("$UserName     |      Полная теска      |      $RequestMessage")
+                        $StatusList.Items.Add("$UserName     |      РџРѕР»РЅС‹Р№ С‚РµСЃРєР°      |      $RequestMessage")
                     } else {
                         $userName = $item.UserName
                         $RequestMessage = $item.StatusMessage
-                        $StatusList.Items.Add("$UserName     |      Не найдена авторизация      |      $RequestMessage")
+                        $StatusList.Items.Add("$UserName     |      РќРµ РЅР°Р№РґРµРЅ Р°РІС‚РѕСЂРёР·РѕРІР°РЅРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ      |      $RequestMessage")
                     }
                 }
             }
@@ -316,12 +233,16 @@ $SendMessage.Add_Click({
                 Start-Sleep -Seconds $interval
             }
             if ($count -eq $interation) {
-                $StatusLabel1.Text = "Выполнено"
+                $ExcelWorkBook.Save()
+                $ExcelWorkBook.close($true)
+
+                $ExcelObj.Quit()
+                $StatusLabel1.Text = "Р’С‹РїРѕР»РЅРµРЅРѕ"
             }
         }
     } else {
-        msg * "Файл не найден. Пожалуста введите корректный путь"
-        $StatusLabel1.Text = "Ошибка получения файла"
+        msg * "Р¤Р°Р№Р» РЅРµ РЅР°Р№РґРµРЅ"
+        $StatusLabel1.Text = "Р¤Р°Р№Р» РЅРµ РЅР°Р№РґРµРЅ"
         return $False
     }
     
@@ -329,7 +250,7 @@ $SendMessage.Add_Click({
 $window_form.Controls.Add($SendMessage)
 
 $form_status_label3 = New-Object System.Windows.Forms.Label
-$form_status_label3.Text = "Выполнено %:"
+$form_status_label3.Text = "Р’С‹РїРѕР»РЅРµРЅРѕ %:"
 $form_status_label3.Location = New-Object System.Drawing.Point(230,10)
 $form_status_label3.AutoSize = $true
 $form_status_label3.Font = New-Object System.Drawing.Font("Arial",14,[System.Drawing.FontStyle]::Regular)
@@ -343,7 +264,7 @@ $form_status_label4.Font = New-Object System.Drawing.Font("Arial",14,[System.Dra
 $window_form.Controls.Add($form_status_label4)
 
 $Path = New-Object System.Windows.Forms.Label
-$Path.Text = "Путь к Excel файлу:"
+$Path.Text = "РџСѓС‚СЊ Рє Excel С„Р°Р№Р»Сѓ:"
 $Path.Location = New-Object System.Drawing.Point(230,80)
 $Path.AutoSize = $true
 $Path.Font = New-Object System.Drawing.Font("Arial",14,[System.Drawing.FontStyle]::Regular)
@@ -351,24 +272,17 @@ $window_form.Controls.Add($Path)
 
 $textBox2 = New-Object System.Windows.Forms.TextBox
 $textBox2.Location = New-Object System.Drawing.Point(232,110)
-$textBox2.Size = New-Object System.Drawing.Size(250,30)
+$textBox2.Size = New-Object System.Drawing.Size(300,30)
 $textBox2.Height = 40
 $window_form.Controls.Add($textBox2)
 
-$StopMessage = New-Object System.Windows.Forms.Button
-$StopMessage.BackColor = "#3ecede"
-$StopMessage.text = "Стоп"
-$StopMessage.Location = New-Object System.Drawing.Point(10,140)
-$StopMessage.Size = New-Object System.Drawing.Size(180,30)
-$StopMessage.AutoSize = $True
-$window_form.Controls.Add($SendMessage)
-
 $btnFileBrowser = New-Object System.Windows.Forms.Button
 $btnFileBrowser.BackColor = '#1a80b6'
-$btnFileBrowser.text = 'Обзор'
+$btnFileBrowser.text = 'РћР±Р·РѕСЂ'
 $btnFileBrowser.Location = New-Object System.Drawing.Point(232,140)
 $btnFileBrowser.Size = New-Object System.Drawing.Size(70,30)
 $btnFileBrowser.Add_Click({
+    
     Add-Type -AssemblyName System.windows.forms | Out-Null
     $OpenDialog = New-Object -TypeName System.Windows.Forms.OpenFileDialog
     $OpenDialog.initialDirectory = $initialDirectory
@@ -381,12 +295,12 @@ $window_form.Controls.Add($btnFileBrowser)
 
 $StatusList = New-Object System.Windows.Forms.ListBox
 $StatusList.Location = New-Object System.Drawing.Point(10,200)
-$StatusList.Size = New-Object System.Drawing.Size(575,320)
+$StatusList.Size = New-Object System.Drawing.Size(605,320)
 
 $window_form.Controls.Add($StatusList)
 
 $StatusLabel = New-Object System.Windows.Forms.Label
-$StatusLabel.Text = "Cтатус:"
+$StatusLabel.Text = "РЎС‚Р°С‚СѓСЃ:"
 $StatusLabel.Location = New-Object System.Drawing.Point(10,530)
 $StatusLabel.AutoSize = $true
 $StatusLabel.Font = New-Object System.Drawing.Font("Arial",14,[System.Drawing.FontStyle]::Regular)
